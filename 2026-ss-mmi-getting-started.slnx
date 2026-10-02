@@ -1,0 +1,11 @@
+﻿<Solution>
+  <Project Path="Unity.XR.Interaction.Toolkit.Samples.StarterAssets.csproj" />
+  <Project Path="Recognissimo.csproj" />
+  <Project Path="Assembly-CSharp.csproj" />
+  <Project Path="MMI.Fusion.csproj" />
+  <Project Path="Estrada.csproj" />
+  <Project Path="Recognissimo.Utils.csproj" />
+  <Project Path="Unity.XR.Interaction.Toolkit.Samples.StarterAssets.Editor.csproj" />
+  <Project Path="Recognissimo.Editor.csproj" />
+  <Project Path="MMI.Semantics.csproj" />
+</Solution>
