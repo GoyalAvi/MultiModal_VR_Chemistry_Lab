@@ -1,4 +1,4 @@
-# Orga – Team 12 · Multimodal User Interfaces (SS 2026)
+# Multimodal User Interfaces VR Chemistry Lab
 
 This repository is the entry point for grading. It describes our application idea, lists the requirements we want to have graded and who implemented them, explains the architecture, links to all relevant materials, lists all supported user interactions, and explains how to start the prototype, and lists the external sources we used.
 
@@ -22,8 +22,8 @@ This repository is the entry point for grading. It describes our application ide
 
 | Member | Email |
 |---|---|
-| Avi Goyal | avi.goyal@stud-mail.uni-wuerzburg.de |
-| Ayush Srivastava | ayush.srivastava@stud-mail.uni-wuerzburg.de |
+| Avi Goyal | avi2000udaipur@gmail.com |
+
 
 ---
 
