@@ -1,266 +1,232 @@
-# Multimodal User Interfaces VR Chemistry Lab
+# Multimodal VR Chemistry Lab for Children
 
-This repository is the entry point for grading. It describes our application idea, lists the requirements we want to have graded and who implemented them, explains the architecture, links to all relevant materials, lists all supported user interactions, and explains how to start the prototype, and lists the external sources we used.
+A virtual-reality chemistry lab where children set up equipment, add chemicals, mix them and heat them on a Bunsen burner, controlled by **speech**, **pointing** and **hand gestures** instead of controller menus.
 
-**Prototype:** a VR chemistry lab for children. Kids create lab equipment, add chemicals, mix them and heat them on a Bunsen burner, controlled by **speech**, **pointing** and **hand gestures** instead of controller menus. Built with Unity 6000.3.11f1 for the Meta Quest 3.
+> *"Create three red test tubes there."* · *"Put that there."* · *"Make it this big."* · *"Add hydrochloric acid."*
 
+![Teaser](/teaser.png)
+
+**Author:** [Avi Goyal](https://www.linkedin.com/in/avi-goyal/) · **Built with:** Unity 6000.3.11f1, XR Interaction Toolkit 3.4.1, Meta Quest 3
+
+Developed as a team project in the *Multimodal User Interfaces* course (SS 2026) at the Chair for Human-Computer Interaction, University of Würzburg.
+
+---
 
 ## Contents
 
-1. [Team](#1-team)
-2. [Application idea](#2-application-idea)
-3. [Requirements considered for grading](#3-requirements-considered-for-grading)
-4. [Architecture](#4-architecture)
-5. [Materials](#5-materials)
-6. [Supported user interactions](#6-supported-user-interactions)
-7. [How to start the prototype](#7-how-to-start-the-prototype)
-8. [External sources](#8-external-sources)
+1. [Why multimodal?](#why-multimodal)
+2. [Features](#features)
+3. [Chemistry experiments](#chemistry-experiments)
+4. [Architecture](#architecture)
+5. [How a command is processed](#how-a-command-is-processed)
+6. [Commands](#commands)
+7. [Getting started](#getting-started)
+8. [Project structure](#project-structure)
+9. [Testing](#testing)
+10. [My contributions](#my-contributions)
+11. [Credits and third-party assets](#credits-and-third-party-assets)
+12. [Known limitations](#known-limitations)
 
 ---
 
-## 1. Team
+## Why multimodal?
 
-| Member | Email |
-|---|---|
-| Avi Goyal | avi2000udaipur@gmail.com |
+Real chemistry labs are rarely accessible to children: acids, bases and silver nitrate are dangerous, burners are a fire risk, and glassware breaks. A virtual lab removes those risks, but only if children can actually use it. Controller menus are hard to learn and pull attention away from the experiment, so the lab is controlled the way children naturally communicate:
 
-
----
-
-## 2. Application idea
-
-### 2.1 Scenario
-
-Real chemistry labs are rarely available to children: chemicals like acids, bases and silver nitrate are dangerous, burners are a fire risk, glassware breaks, and every experiment costs material. Our prototype gives children a **virtual chemistry lab** where they can set up equipment, add real chemicals, run classic school experiments and watch the reactions happen, safely and as often as they like.
-
-### 2.2 Why a multimodal interface fits this scenario
-
-- **Children talk and point, they don't use menus.** A child naturally says *"put that there"* or *"pour this in"* while pointing. Controller menus with nested buttons are hard to learn for young users and pull attention away from the experiment.
-- **Speech carries what pointing can't.** Chemical names (*hydrochloric acid*, *silver nitrate*), amounts (*three test tubes*), colours and actions (*mix*, *heat*, *empty*) are abstract and can't be pointed at. Saying them is fast and natural.
-- **Pointing carries what speech can't.** In a lab with several identical beakers, *"the left beaker next to the flask"* is clumsy. Pointing at the right container and saying *"this"* or *"that"* is precise.
-- **Gestures carry sizes and directions.** Showing a size with both hands (*"make it this big"*) or turning the wrist to rotate an object is more natural than saying a number.
-- **The combination matches how a teacher explains a lab:** *"take this beaker, add hydrochloric acid, and mix it with that one"*. Each modality contributes the part it's best at, and the fusion engine combines them into one command.
-- **Hands stay free for the experiment.** No menu has to be opened, so the child's focus stays on the bench and the reaction.
-
-### 2.3 Application logic
-
-- **Chemicals and reactions** are defined in a chemical database: each chemical has names, aliases and a pH value. Containers (beakers, flasks, test tubes) keep track of their contents.
-- **Liquid colour follows the pH** of the current mixture, so neutralization is visible as a colour change.
-- **Reactions** are detected from the combined contents and the heating state. The prototype covers four school experiments:
-  1. **Neutralization:** HCl + NaOH → NaCl + H₂O, shown by the pH colour change.
-  2. **Ammonium chloride smoke:** HCl + NH₃ → NH₄Cl; heated on the burner, it fumes and the container empties.
-  3. **Precipitation:** AgNO₃ + NaCl → AgCl↓ + NaNO₃, a white precipitate forms in the liquid.
-  4. **Quicklime and water:** CaO + H₂O → Ca(OH)₂, the mixture heats up and boils itself dry.
-- **The Bunsen burner** can be turned on and off; containers placed on its stand are heated, and containers standing on it move with it.
-- **Guided learning:** an **Experiment board** guides through the four experiments step by step, and a separate **Basics board** teaches every command in short lessons. Steps tick off automatically when the child performs the right action, and tips appear when a command is refused.
-
-### 2.4 Commands adapted to the application context
-
-- **Lab vocabulary:** objects are *beakers, flasks, test tubes* and the *burner*; chemicals are spoken by name (*"add hydrochloric acid"*, *"add silver nitrate"*).
-- **Lab actions:** *add / pour / fill*, *mix / stir / shake*, *empty / drain / pour out*, *move to burner*, *turn on the burner*.
-- **Lab-specific rules:** *"move to burner"* places the selected container on the burner's stand, containers on the stand move with the burner, the burner can't be moved onto itself, and *"delete everything"* never deletes the burner.
-- **Child-friendly phrasing:** every command has at least five natural alternatives (e.g. *grab that*, *get rid of this*, *give me a beaker*), and the system gives immediate audio feedback: a soft chime when a command is understood, a low buzz when it's refused.
-- **Working with many objects:** *"consider only beakers"* focuses the bench on one kind of container, and *"create three test tubes"* followed by *"make them blue"* treats a set of containers as a group, like when preparing a real experiment.
-
-### 2.5 Visualization in the lab context
-
-- A **lab room** with a bench, glassware models (beaker, flask, test tube) and a **Bunsen burner** with a visible flame and flame sound.
-- **Liquids** fill the containers and change colour with the pH; **precipitates** appear as solid particles; heated mixtures produce **fumes**.
-- **Floating labels** above each container show its contents with real chemical notation (e.g. H₂O, NaCl) and stay readable from any direction.
-- **Selection** is shown by a highlight on the object; a **preview** shows where new objects will appear while the child is still speaking.
-- The two **guide boards** look like classroom boards next to the bench.
-
----
-
-## 3. Requirements considered for grading
-
-| | Points |
-|---|---|
-| Optional-requirements maximum (team of 2) | 40 |
-| Optional requirements claimed | **35** (5 × 5 P + 1 × 10 P) |
-
-We do not claim the Reusable Fusion Method Package, the Reusable Semantic Integration Package or their extensions. The fusion and semantic integration code is part of the prototype repository and fulfils the mandatory requirements below.
-
-### 3.1 Mandatory requirements
-
-| Requirement | Implemented by | How to demonstrate |
+| Modality | Carries | Example |
 |---|---|---|
-| **VR Prototype and Core Object Interactions** | Ayush Srivastava | Create, select, move and delete at least two object types (beaker, flask, test tube, burner): *"create a beaker"*, *"create a flask there"* (pointing), *"select that beaker"* (pointing), *"move it there"* (pointing), *"delete a flask"*. |
-| **Multimodal Fusion Method** | Avi Goyal | Speech only: *"create a beaker"*, *"delete a flask"*. Speech + pointing: *"select that beaker"*, *"move it there"*. The Unity Console prints the fused intent for every command, e.g. `{action:select; target:red beaker (pointed: Beaker_03); color:red; objectType:beaker; pointing:[Beaker_03]}`. The fusion engine is `FusionEngine`; the recognised interactions are defined in `Assets/Scripts/Intent/InteractionSetup*.cs`. |
-| **Semantic Integration** | Ayush Srivastava | Every recognised intent calls the matching application function registered in `ParserIntent.RegisterHandlers` (`Assets/Scripts/Intent/ParserIntent.cs`). Objects are found by their properties through `SemanticQuery`, e.g. *"select the red beaker"* queries type = beaker and colour = red. |
-| **Technical Quality** | Avi Goyal, Ayush Srivastava | Run the scene: no errors in the Console, smooth frame rate with several objects, fumes and labels. Self-checks: right-click the **InputTest** component → *Self-check: phrasings* and *Self-check: create counts* (Edit or Play mode), *Self-check: context* and *Self-check: basics board* (Play mode). All cases report PASS in the Console. |
+| **Speech** | What to do, what to use: actions, object types, chemicals, colours, counts | *"add hydrochloric acid"*, *"create three test tubes"* |
+| **Pointing** | Which object, which place | *"select **that**"*, *"put it **there**"* |
+| **Gestures** | Sizes and rotation | *"make it **this** big"* with both hands, wrist twist to rotate |
 
-### 3.2 Optional requirements
-
-| Requirement | Points | Implemented by | How to demonstrate |
-|---|---|---|---|
-| **Additional Object Property Modification** | 5 | Ayush Srivastava | Point at an object and say *"colour that yellow"*, or with a selection *"paint it blue"*. The object changes colour. |
-| **Property-Based Object Selection** | 5 | Ayush Srivastava | Create a red and a blue beaker. Point at the red one and say *"select that red beaker"*, or say *"select the red beaker"* without pointing. Only a matching object is selected. |
-| **Gesture-Based Modification** | 5 | Avi Goyal | Select a beaker, hold both controllers about 20 cm apart and say *"make it this big"*. A line with a live "cm" label appears between the hands, and the beaker's size matches the distance. Also *"make it this tall"* / *"this wide"*. |
-| **Two-Pointing Command** | 5 | Avi Goyal | Point at a test tube while saying *"put that"*, then point at another spot while saying *"there"*. The pointed object (not the selection) moves to the second spot. |
-| **Alternative Phrasings** | 5 | Avi Goyal | Every interaction accepts at least 5 alternative phrasings (see section 6), e.g. *"spawn a beaker"*, *"grab that"*, *"get rid of this"*. *Self-check: phrasings* runs every phrasing through the real fusion engine and reports PASS per case. |
-| **Context-Sensitive Interaction** | 10 | Ayush Srivastava | Place a beaker next to a flask. Say *"consider only beakers"* (a badge appears, other objects dim), point at the flask and say *"delete this"*: the beaker is deleted, the flask stays. *"consider everything"* clears the filter. Dialogue references: *"select that beaker"* → *"move it there"*; *"create three test tubes"* → *"make them blue"*; *"rotate left"* → *"again"*. |
+Each modality contributes the part it's best at. A fusion engine combines them into one command, the same way a teacher would say *"take this beaker and mix it with that one"*.
 
 ---
 
-## 4. Architecture
+## Features
+
+**Objects and interaction**
+- Create, select, move and delete beakers, flasks, test tubes and a Bunsen burner by speech alone or speech + pointing.
+- Rows of objects (*"create three red test tubes there"*) with a live preview of where they will appear.
+- Two-pointing commands (*"put that there"*), each pointing word bound to its own pointing direction.
+- Colour changes and property-based selection (*"select the red beaker"*).
+- Resizing by voice (*"make it bigger"*) or by showing the size with both hands (*"make it this big"*).
+- Upright-only rotation by voice (*"rotate left"*, *"turn it around"*) or wrist twist.
+- Smart placement on surfaces, in the air, or in front of the user.
+
+**Context and dialogue**
+- Filters: *"consider only beakers"*, then *"delete this"* while pointing near a flask deletes the beaker next to it.
+- References: *"it"* (current selection), *"them"* (last created group), *"again"* (repeat last command).
+- Every command accepts at least five alternative phrasings.
+
+**Guidance and feedback**
+- **Experiment board:** step-by-step guidance through four experiments, steps tick off automatically.
+- **Basics board:** eight hands-on lessons teaching every command, with tips when a command is refused.
+- **Help card:** *"what can I say"*.
+- Floating labels with chemical notation (H₂O, NaCl), selection highlight, and audio feedback (chime when understood, buzz when refused).
+
+---
+
+## Chemistry experiments
+
+Liquid colour follows the pH of the mixture. Reactions are detected from the combined contents and the heating state.
+
+| Experiment | Reaction | What you see |
+|---|---|---|
+| Neutralization | HCl + NaOH → NaCl + H₂O | Colour change with the pH |
+| Ammonium chloride smoke | HCl + NH₃ → NH₄Cl | Fumes when heated, the container empties |
+| Precipitation | AgNO₃ + NaCl → AgCl↓ + NaNO₃ | A white precipitate forms |
+| Quicklime and water | CaO + H₂O → Ca(OH)₂ | The mixture heats up and boils itself dry |
+
+---
+
+## Architecture
 
 ```mermaid
 flowchart LR
     MIC[Microphone<br/>speech recognizer] --> SA[SpeechSourceAdapter<br/>words + word times]
-    CTRL[Right controller] --> PS[RobustPointingSource<br/>pointing ray + ray history]
+    CTRL[Right controller] --> PS[RobustPointingSource<br/>ray + ray history]
     HANDS[Both controllers] --> HD[HandDistanceSource<br/>hand distance]
     SA --> FE[FusionEngine]
     PS --> FE
     HD --> FE
-    IS[InteractionSetup<br/>vocabulary + interaction definitions] -.configures.-> FE
+    IS[InteractionSetup<br/>vocabulary + interactions] -.configures.-> FE
     FE -->|recognised intent| PI[ParserIntent handlers]
-    FE -->|recognised intent| TB[TutorialManager / BasicsBoard]
+    FE -->|recognised intent| TB[Tutorial boards]
     PI <--> SQ[SemanticRegistry / SemanticQuery]
-    PI --> SCENE[Scene: lab objects,<br/>LabContainer, BunsenBurner,<br/>labels, sounds]
-    DC[DialogueContext<br/>filter, it / them, again] <--> PI
+    PI <--> DC[DialogueContext]
+    PI --> SCENE[Lab objects, chemistry,<br/>burner, labels, sounds]
 ```
 
-**Input layer.** Adapters turn the concrete devices into abstract inputs: `SpeechSourceAdapter` delivers recognised words and records when each pointing word (*this, that, here, there*) was spoken; `RobustPointingSource` casts the controller ray every frame and keeps a short history of rays; `HandDistanceSource` measures the distance between both hands.
+| Layer | Component | Responsibility |
+|---|---|---|
+| Input | `SpeechSourceAdapter` | Passes recognised words on and records when each pointing word (*this, that, here, there*) was spoken |
+| Input | `RobustPointingSource` | Casts the controller ray every frame and keeps a short ray history |
+| Input | `HandDistanceSource` | Measures the distance between both hands |
+| Fusion | `FusionEngine` | Generic fusion: collects a sentence, matches it against the configured interactions, fills parameter slots, attaches pointing and gesture samples |
+| Configuration | `InteractionSetup` | The application's vocabulary and interaction definitions; also generates the speech recognizer's grammar |
+| Semantic integration | `ParserIntent`, `SemanticQuery` | Resolves *"that"* or *"the red beaker"* to real scene objects and calls the application function |
+| Context | `DialogueContext` | Keeps the active filter, the last group and the last command between sentences |
+| Application | `LabContainer`, `ChemicalDatabase`, `BunsenBurner` | Chemistry, reactions and heating |
 
-**Fusion.** `FusionEngine` collects the spoken words of one sentence, matches them against the configured interactions, fills parameter slots (object type, colour, count, chemical, direction…) and attaches the pointing or gesture samples that belong to the sentence. The result is a recognised intent, e.g. `{action:select; color:red; objectType:beaker; pointing:[Beaker_03]}`. When two interactions match, the longest matching trigger wins.
-
-**Configuration.** `InteractionSetup` (split into `InteractionSetup.*.cs` by topic) defines the whole vocabulary and every interaction with its trigger phrases, parameter slots and whether it needs pointing or a gesture. The engine itself contains no application words.
-
-**Semantic integration.** Each interaction is registered with a handler in `ParserIntent.RegisterHandlers`. Handlers resolve the target from the pointing ray, the current selection or a semantic query (`SemanticQuery` with type and colour on objects registered in `SemanticRegistry`), and then call the application function.
-
-**Application.** `ParserIntent` (split into partial files: targeting, create, move, placement, rotation, resize, preview, context, chemistry, utilities) carries out the commands in the scene. `LabContainer` and `ChemicalDatabase` implement the chemistry, `BunsenBurner` the heating, `ContainerLabel` the floating labels, `SoundFeedback` the audio feedback, and `TutorialManager` / `BasicsBoard` the two guide boards. `DialogueContext` keeps the active filter, the last group and the last command between sentences.
-
-A detailed description of every component, the command reference and the self-checks is in the [prototype README](https://gitlab2.informatik.uni-wuerzburg.de/hci/teaching/courses/multimodal-interfaces/student-material/ss26/12-team/2026-ss-mmi-getting-started/-/blob/main/README.md).
-
----
-
-## 5. Materials
-
-| Material | Link |
-|---|---|
-| Prototype repository (Unity project) | [2026-ss-mmi-getting-started](https://gitlab2.informatik.uni-wuerzburg.de/hci/teaching/courses/multimodal-interfaces/student-material/ss26/12-team/2026-ss-mmi-getting-started) |
-| Prototype documentation (architecture details, command reference, self-checks) | [Prototype README](https://gitlab2.informatik.uni-wuerzburg.de/hci/teaching/courses/multimodal-interfaces/student-material/ss26/12-team/2026-ss-mmi-getting-started/-/blob/main/README.md) |
-| Showcase video (2–4 min, English subtitles) | [media/showcase.mp4](media/showcase.mp4) |
-| Teaser image | [media/teaser.png](media/teaser.png) |
+The fusion engine contains no application words. Everything specific to the chemistry lab lives in `InteractionSetup`, so the same engine could drive a completely different application.
 
 ---
 
-## 6. Supported user interactions
+## How a command is processed
 
-**Legend:** 🗣 speech only · 👉 speech + pointing (say *this / that / here / there* while pointing) · ✋ speech + two-hand gesture. Where 👉 is optional, the command falls back to the current selection.
+Example: the user points at a beaker and says *"select that red beaker"*.
 
-**Objects:** beaker, flask, test tube, burner. **Colours:** red, orange, yellow, green, blue, violet, black, white.
+1. **Recognition.** The speech recognizer only knows the words generated from `InteractionSetup` (plus an `[unk]` token for anything else), which keeps recognition accurate and fast.
+2. **Fusion.** `FusionEngine` matches *select* as the action, fills `color = red` and `objectType = beaker`, and attaches the ray recorded when *"that"* was spoken. Output:
+   ```
+   {action:select; target:red beaker (pointed: Beaker_03); color:red; objectType:beaker; pointing:[Beaker_03]}
+   ```
+3. **Semantic integration.** The `select` handler checks whether the pointed object really is a red beaker. If not, it asks `SemanticQuery` for a red beaker closest to the ray, or refuses the command.
+4. **Action.** The beaker is selected and highlighted, and a confirmation sound plays.
 
-### 6.1 Objects
-
-| Interaction | Example | Alternative phrasings | Input |
-|---|---|---|---|
-| Create | *"create a beaker"*, *"create three red test tubes there"* | spawn, make, build, generate, give me, add new | 🗣 / 👉 (placement) |
-| Select | *"select that beaker"*, *"select the red beaker"* | pick, choose, grab, hold, catch | 👉 / 🗣 (by property) |
-| Move | *"move it there"*, *"move that there"* | drag, place, bring, carry, slide | 👉 |
-| Put that there (two pointing) | *"put that there"* | drop, set, leave, position, stick | 👉 👉 |
-| Delete | *"delete this"*, *"delete a flask"* | remove, destroy, erase, trash, get rid of, throw away | 👉 / 🗣 |
-| Delete all | *"delete all test tubes"*, *"delete everything"* | remove / destroy / erase + all / everything | 🗣 |
-| Change colour | *"colour that yellow"*, *"make it red"* | change, recolor, paint, tint, dye | 👉 / selection |
-| Rotate | *"rotate left"*, *"rotate 90 degrees"*, *"turn it around"*, *"rotate this"* + wrist twist | spin, turn, swivel, twirl, revolve | 🗣 / 👉 / controller twist |
-| Scale | *"make it bigger"*, *"smaller"* | enlarge, increase, larger, expand, scale up / shrink, reduce, tinier, scale down | 🗣 / 👉 |
-| Resize to hand distance | *"make it this big"* | this tall, this wide, this size, this long, this high | ✋ |
-| Highlight | *"highlight that"* | show, glow, blink, spotlight, outline | 👉 |
-
-### 6.2 Chemistry and burner
-
-| Interaction | Example | Alternative phrasings | Input |
-|---|---|---|---|
-| Add chemical | *"add hydrochloric acid"*, *"add silver nitrate"* | pour, fill, sprinkle, insert, dissolve | selection / 👉 |
-| Mix | select a container, point at another: *"mix this"* | combine, stir, blend, agitate, shake, swirl | 👉 |
-| Empty | *"empty it"* | drain, dump, pour out, wash out, tip out | selection / 👉 |
-| Move onto burner | *"move to burner"*, *"put it on the burner"* | move / place / bring / carry / slide + to / on + burner | selection / 👉 |
-| Burner on | *"turn on the burner"* | switch on, start flame, fire up, heat up, light the burner | 🗣 |
-| Burner off | *"turn off the burner"* | switch off, douse flame, cut heat, end heating, stop the burner | 🗣 |
-
-### 6.3 Context and dialogue
-
-| Interaction | Example | Alternative phrasings | Input |
-|---|---|---|---|
-| Set filter | *"consider only beakers"*, *"only red ones"* | only, just, focus on | 🗣 |
-| Clear filter | *"consider everything"* | clear the filter, all objects, show everything, remove filter | 🗣 |
-| Refer to last group | *"make them blue"*, *"delete them"* | them, those, all of them | 🗣 |
-| Repeat last command | *"again"* | repeat, one more time, once more | 🗣 |
-
-### 6.4 Tutorial boards and help
-
-| Interaction | Example | Alternative phrasings | Input |
-|---|---|---|---|
-| Next / previous experiment | *"next experiment"*, *"previous experiment"* | skip / another / following / advance / new experiment; earlier / prior / preceding experiment, the experiment before | 🗣 |
-| Show experiment | *"show experiment two"* | open / start / begin / load / launch experiment | 🗣 |
-| Show / hide basics board | *"show basics"*, *"hide basics"* | show the tutorial, show instructions, how does it work, teach me / close the tutorial, hide instructions | 🗣 |
-| Next / previous / restart lesson | *"next lesson"*, *"previous lesson"*, *"restart lesson"* | skip / following / advance lesson; earlier / prior lesson; reset / redo / retry lesson | 🗣 |
-| Show lesson | *"show lesson three"* | open / start / begin / load / launch lesson | 🗣 |
-| Next / previous on the board you look at | *"next"*, *"previous"*, *"restart"* | continue, skip, forward, go on, next step / earlier, prior, before, one before, last step / reset, redo, start over, try again | 🗣 + head gaze |
-| Help card | *"what can I say"* | help, commands, show commands, list commands | 🗣 |
-| Close help | *"close help"* | done, return, hide help, exit help, close commands | 🗣 |
+When several interactions match a sentence, the longest matching trigger phrase wins; on a tie, the interaction defined first.
 
 ---
 
-## 7. How to start the prototype
+## Commands
 
-### Requirements
-- Unity Hub with **Unity 6000.3.11f1**
-- Meta Quest 3 with the **Meta Quest Link** app (Link cable or Air Link)
-- A working microphone (the headset microphone works via Link)
-- Access to our GitLab group
+Legend: 🗣 speech only · 👉 speech + pointing · ✋ speech + two-hand gesture
 
-### Steps
-1. **Clone** the prototype repository (don't download it as ZIP; the project uses Git LFS):
+| Interaction | Example | Some alternatives | Input |
+|---|---|---|---|
+| Create | *"create a beaker"*, *"create three red test tubes there"* | spawn, make, build, give me | 🗣 / 👉 |
+| Select | *"select that beaker"*, *"select the red beaker"* | pick, choose, grab | 👉 / 🗣 |
+| Move | *"move it there"* | drag, place, bring, carry | 👉 |
+| Put that there | *"put that there"* | drop, set, position | 👉 👉 |
+| Delete | *"delete this"*, *"delete all test tubes"* | remove, destroy, get rid of | 👉 / 🗣 |
+| Change colour | *"color that yellow"*, *"make it red"* | paint, recolor, tint, dye | 👉 |
+| Rotate | *"rotate left"*, *"turn it around"* | spin, turn, swivel | 🗣 / 👉 |
+| Resize | *"make it bigger"*, *"make it this big"* | enlarge, shrink, this tall, this wide | 🗣 / ✋ |
+| Add chemical | *"add hydrochloric acid"* | pour, fill, dissolve | 👉 / selection |
+| Mix | *"mix this"* | combine, stir, shake | 👉 |
+| Burner | *"turn on the burner"*, *"move to burner"* | light the burner, switch off | 🗣 |
+| Filter | *"consider only beakers"*, *"consider everything"* | only, focus on, clear the filter | 🗣 |
+| Group / repeat | *"make them blue"*, *"again"* | those, once more | 🗣 |
+| Tutorial | *"next lesson"*, *"show experiment two"*, *"what can I say"* | teach me, help | 🗣 |
+
+---
+
+## Getting started
+
+**Requirements:** Unity Hub with Unity 6000.3.11f1, a Meta Quest 3 with Quest Link (cable or Air Link), a microphone.
+
+1. Clone the repository (the project uses Git LFS):
    ```bash
    git lfs install
-   git clone https://gitlab2.informatik.uni-wuerzburg.de/hci/teaching/courses/multimodal-interfaces/student-material/ss26/12-team/2026-ss-mmi-getting-started.git
+   git clone https://github.com/GoyalAvi/MultiModal_VR_Chemistry_Lab.git
    ```
-2. In **Unity Hub**, click **Add → Add project from disk**, select the cloned folder, and open it with **Unity 6000.3.11f1**. The first import takes a few minutes. All code, including the fusion and semantic integration, is part of the repository, so no extra setup is needed.
-3. Open the scene **`Assets/Scenes/mmi-getting-started.unity`**.
-4. Put on the **Meta Quest 3**, start **Quest Link** (cable or Air Link), and make sure the PC sees the headset.
-5. In Windows sound settings, check that the **headset microphone** (or another microphone) is the default input device.
-6. Press **Play** in the Unity Editor.
-
-### First steps in VR
-- Look at the two boards next to the bench: the **Basics board** teaches each command step by step, the **Experiment board** guides through the chemistry experiments. Steps tick off automatically.
-- Point with the **right controller** and speak naturally, e.g. *"create a beaker"*, *"select that"*, *"move it there"*.
-- Say *"what can I say"* to see all commands on the board.
-- A soft chime confirms a recognised command, a low buzz means it was refused (e.g. nothing to point at). The Console shows the recognised intent and the reason.
+2. Open the folder with **Unity 6000.3.11f1** in Unity Hub. The first import takes a few minutes.
+3. Open `Assets/Scenes/mmi-getting-started.unity`.
+4. Connect the Quest 3 via Quest Link and set the headset microphone as the default Windows input.
+5. Press **Play**, point with the right controller and start talking, e.g. *"create a beaker"*.
 
 ---
 
-## 8. External sources
+## Project structure
 
-Functionality provided directly by these sources is not claimed for grading. All interaction logic, fusion, semantic integration and chemistry is our own code.
+```
+Assets/
+  Scenes/            Main scene
+  Scripts/
+    Input/           Input sources and setup (pointing, hand distance, speech wiring)
+    Intent/          InteractionSetup.*.cs, ParserIntent.*.cs, DialogueContext, self-checks
+    Chemistry/       ChemicalDatabase, LabContainer, BunsenBurner, ContainerLabel
+    Objects/         VRObject (semantic properties of lab objects)
+    Tutorial/        Experiment board, Basics board
+    Audio/           SoundFeedback
+Packages/
+  fusion-method-package/          FusionEngine, InteractionDefinition, RecognizedIntent
+  semantic-integration-package/   ISemanticEntity, SemanticRegistry, SemanticQuery
+```
 
-### Unity packages
+---
 
-| Package | Used for |
+## Testing
+
+Self-checks run the real fusion engine with simulated speech, pointing and gesture input. Right-click the **InputTest** component in the Inspector:
+
+| Self-check | Covers |
 |---|---|
-| Universal Render Pipeline 17.3.0, Shader Graph | Rendering and materials |
-| XR Interaction Toolkit 3.4.1 (incl. Starter Assets sample) | XR rig and controllers |
-| XR Plug-in Management, Oculus XR Plugin 4.5.2, OpenXR | Meta Quest 3 support |
-| TextMesh Pro (incl. LiberationSans font) | Labels and board text |
-| glTFast | Loading the room model (.glb) |
-| Timeline, uGUI, Visual Scripting, Collab Proxy | Unity defaults |
+| Phrasings | Every phrasing of every command resolves to the right interaction, including clash cases |
+| Create counts | Numbers in create commands, and that *"next to that"* is not read as a number |
+| Context | Filters, *it / them*, *again* |
+| Basics board | Lesson steps tick only for the right commands |
 
-### Course-provided
+---
+
+## My contributions
+
+- **Multimodal fusion method:** the fusion engine, sentence buffering and flushing, trigger matching and tie-breaking, parameter slots, and attaching pointing and gesture samples to the right words.
+- **Two-pointing commands:** word-timed pointing so *"put that there"* binds each pointing word to its own direction.
+- **Gesture-based modification:** *"make it this big"* with the hand distance sampled at the moment *"this"* is spoken.
+- **Alternative phrasings:** the vocabulary design, clash handling between commands, and the automated phrasing self-check.
+
+---
+
+## Credits and third-party assets
+
+**Team:** Avi Goyal and Ayush Srivastava. Course: *Multimodal User Interfaces*, SS 2026, Chair for Human-Computer Interaction, University of Würzburg.
 
 | Source | Used for |
 |---|---|
-| Speech wrapper (`Assets/Speech`) | Speech input |
-| Gesture wrapper (`Assets/Gesture`) | Included from the course template; pointing uses our own `RobustPointingSource` |
-| Recognissimo (`Assets/Recognissimo`) | Offline speech recognition |
-| [Vosk language models](https://alphacephei.com/vosk/models) (`Assets/StreamingAssets/LanguageModels`) | Speech recognition models; only the English model is used |
+| Unity URP, Shader Graph, XR Interaction Toolkit, OpenXR / Oculus XR Plugin, TextMesh Pro, glTFast | Rendering, XR, text, model loading |
+| Recognissimo with [Vosk](https://alphacephei.com/vosk/models) language models | Offline speech recognition |
+| Course template (speech and gesture wrappers) | Starting point of the project |
+| [Interface Sounds by Kenney](https://kenney.nl/assets/interface-sounds) (CC0) | Feedback sounds |
+| 3D models and textures (glassware, Bunsen burner, room) | Lab objects and environment |
 
-### Assets
+---
 
-| Asset | Location | Used for |
-|---|---|---|
-| Beaker, flask, test tube, Bunsen burner and microscope models | `Assets/Prefabs/model/` | Lab objects |
-| Classroom table and chair model | `Assets/Prefabs/model/` | Lab room |
-| Precipitation model | `Assets/Prefabs/model/` | Precipitate visual |
-| Blackboard, Bunsen burner and ground textures | `Assets/Texture/` | Room and object materials |
-| [Interface Sounds by Kenney](https://kenney.nl/assets/interface-sounds) (CC0) | `Assets/Audio/` | Feedback sounds (confirmation, click, glass, etc.) |
+## Known limitations
+
+- One colour per sentence.
+- Two commands spoken without a pause can merge into one.
+- Two-pointing timing depends on the recognizer delivering partial results.
+- *"Delete all"* only removes objects created by voice.
+- Recognition quality depends on the microphone and background noise.
